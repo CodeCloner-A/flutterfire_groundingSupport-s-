@@ -1615,7 +1615,7 @@ GroundingMetadata parseGroundingMetadata(Object? jsonObject) {
   // Filters out null elements, which are returned from _parseGroundingSupport when
   // segment is null.
   final groundingSupport = switch (jsonObject) {
-        {'groundingSupport': final List<Object?> groundingSupport} =>
+        {'groundingSupports': final List<Object?> groundingSupport} =>
           groundingSupport
               .map(_parseGroundingSupport)
               .whereType<GroundingSupport>()
