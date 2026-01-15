@@ -1614,18 +1614,22 @@ GroundingMetadata parseGroundingMetadata(Object? jsonObject) {
       [];
   // Filters out null elements, which are returned from _parsegroundingSupports when
   // segment is null.
-  final groundingSupports = switch (jsonObject) {
-        {'groundingSupportss': final List<Object?> groundingSupports} =>
-          groundingSupports
-              .map(_parsegroundingSupports)
-              .whereType<groundingSupports>()
-              .toList(),
+    // Filters out null elements, which are returned from _parseGroundingSupport when
+  // segment is null.
+  final groundingSupport = switch (jsonObject) {
+        {'groundingSupports': final List<Object?> supports} =>
+          supports.map(_parseGroundingSupport).whereType<GroundingSupport>().toList(),
+        {'groundingSupport': final List<Object?> supports} =>
+          supports.map(_parseGroundingSupport).whereType<GroundingSupport>().toList(),
         _ => null,
       } ??
       [];
+
   final webSearchQueries = switch (jsonObject) {
-        {'webSearchQueries': final List<String>? webSearchQueries} =>
-          webSearchQueries,
+        {'webSearchQueries': final List<Object?>? queries} =>
+          (queries ?? const [])
+              .whereType<String>()
+              .toList(),
         _ => null,
       } ??
       [];
@@ -1680,16 +1684,29 @@ groundingSupports? _parsegroundingSupports(Object? jsonObject) {
 
   final segment = switch (jsonObject) {
     {'segment': final Object? segment} => _parseSegment(segment),
+    {'textSegment': final Object? segment} => _parseSegment(segment),
     _ => null,
   };
+
   if (segment == null) {
     return null;
   }
 
-  return groundingSupports(
-      segment: segment,
-      groundingChunkIndices:
-          (jsonObject['groundingChunkIndices'] as List<int>?) ?? []);
+  final rawIndices = jsonObject['groundingChunkIndices'] as List<Object?>?;
+  final groundingChunkIndices = (rawIndices ?? const [])
+      .map((e) => switch (e) {
+            int v => v,
+            num v => v.toInt(),
+            String v => int.tryParse(v),
+            _ => null,
+          })
+      .whereType<int>()
+      .toList();
+
+  return GroundingSupport(
+    segment: segment,
+    groundingChunkIndices: groundingChunkIndices,
+  );
 }
 
 SearchEntryPoint _parseSearchEntryPoint(Object? jsonObject) {
